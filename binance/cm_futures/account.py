@@ -858,7 +858,7 @@ def calculate_price_movement_towards_liquidation(self, symbol: str, **kwargs):
     position_risk = self.get_position_risk(symbol=symbol, **kwargs)
     mark_price = position_risk['markPrice']
     liquidation_price = position_risk['liquidationPrice']
-    return (mark_price - liquidation_price) / mark_price * 100
+    return (mark_price - liquidation_price) / mark_price * 10000 #in bps
 
 def check_and_reduce_exposure(self, symbol: str, portion: float, threshold: float, **kwargs):
     """

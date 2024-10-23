@@ -10,7 +10,7 @@ client = CMFutures(key=key, secret=secret)
 
 try:
     # Call reduce_exposure function with appropriate parameters
-    response = client.reduce_exposure(symbol="BTCUSD_PERP", portion=0.5)
+    response = client.monitor_risk_exposure(symbol="BTCUSD_PERP", portion=0.5, threshold = 50)
     # Log the response from reduce_exposure function
     logging.info(response)
 except ClientError as error:
