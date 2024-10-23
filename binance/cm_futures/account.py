@@ -893,3 +893,20 @@ def monitor_risk_exposure(self, symbol: str, portion: float, threshold: float, *
     while True:
         self.check_and_reduce_exposure(symbol=symbol, portion=portion, threshold=threshold, **kwargs)
         time.sleep(0.5)
+
+def monitor_all_symbols_with_exposure(self, portion: float, threshold: float, **kwargs):
+    """
+    |
+    | **Monitor All Symbols with Exposure (TRADE)**
+    | *Monitor all symbols with exposure every 0.5 seconds and reduce exposure if needed*
+
+    :parameter portion: float; portion of partial reduction
+    :parameter threshold: float; threshold for price movement towards liquidation
+    |
+    """
+    while True:
+        positions = self.get_position_risk(**kwargs)
+        for position in positions:
+            if position['positionAmt'] != 0:
+                self.check_and_reduce_exposure(symbol=position['symbol'], portion=portion, threshold=threshold, **kwargs)
+        time.sleep(0.5)
