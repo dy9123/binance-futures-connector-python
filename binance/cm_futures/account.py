@@ -797,3 +797,99 @@ def commission_rate(self, symbol: str, **kwargs):
     params = {"symbol": symbol, **kwargs}
 
     return self.sign_request("GET", url_path, params)
+
+
+def reduce_exposure(self, symbol: str, portion: float, **kwargs):
+    """
+    |
+    | **Reduce Exposure (TRADE)**
+    | *Reduce exposure when facing the risk of liquidation*
+
+    :parameter symbol: string
+    :parameter portion: float; portion of partial reduction
+    |
+    """
+    # Monitor margin balance
+    position_risk = self.get_position_risk(symbol=symbol, **kwargs)
+    margin_balance = position_risk['marginBalance']
+
+    # Calculate the quantity to reduce
+    quantity_to_reduce = position_risk['positionAmt'] * portion
+
+    # Place a partial liquidation order
+    order_response = self.new_order(
+        symbol=symbol,
+        side="SELL" if position_risk['positionAmt'] > 0 else "BUY",
+        type="MARKET",
+        quantity=quantity_to_reduce,
+        reduceOnly=True,
+        **kwargs
+    )
+
+    # Add remaining value after partial liquidation to remaining balance
+    remaining_balance = margin_balance - (quantity_to_reduce * position_risk['markPrice'])
+
+    return {
+        "order_response": order_response,
+        "remaining_balance": remaining_balance
+    }
+
+def get_lowest_maintenance_margin(self, symbol: str, **kwargs):
+    """
+    |
+    | **Get Lowest Maintenance Margin (USER_DATA)**
+    | *Get the lowest maintenance margin for a symbol.*
+
+    :parameter symbol: string
+    |
+    """
+    position_risk = self.get_position_risk(symbol=symbol, **kwargs)
+    return position_risk['maintMargin']
+
+def calculate_price_movement_towards_liquidation(self, symbol: str, **kwargs):
+    """
+    |
+    | **Calculate Price Movement Towards Liquidation (USER_DATA)**
+    | *Calculate the percentage of price movement towards liquidation.*
+
+    :parameter symbol: string
+    |
+    """
+    position_risk = self.get_position_risk(symbol=symbol, **kwargs)
+    mark_price = position_risk['markPrice']
+    liquidation_price = position_risk['liquidationPrice']
+    return (mark_price - liquidation_price) / mark_price * 100
+
+def check_and_reduce_exposure(self, symbol: str, portion: float, threshold: float, **kwargs):
+    """
+    |
+    | **Check and Reduce Exposure (TRADE)**
+    | *Check if the price movement towards liquidation is smaller than a threshold and reduce exposure partially, otherwise hold on*
+
+    :parameter symbol: string
+    :parameter portion: float; portion of partial reduction
+    :parameter threshold: float; threshold for price movement towards liquidation
+    |
+    """
+    price_movement = self.calculate_price_movement_towards_liquidation(symbol=symbol, **kwargs)
+    if price_movement < threshold:
+        return self.reduce_exposure(symbol=symbol, portion=portion, **kwargs)
+    else:
+        return {"message": "Hold on, no need to reduce exposure"}
+
+import time
+
+def monitor_risk_exposure(self, symbol: str, portion: float, threshold: float, **kwargs):
+    """
+    |
+    | **Monitor Risk Exposure (TRADE)**
+    | *Monitor risk exposure every 0.5 seconds and reduce exposure if needed*
+
+    :parameter symbol: string
+    :parameter portion: float; portion of partial reduction
+    :parameter threshold: float; threshold for price movement towards liquidation
+    |
+    """
+    while True:
+        self.check_and_reduce_exposure(symbol=symbol, portion=portion, threshold=threshold, **kwargs)
+        time.sleep(0.5)
